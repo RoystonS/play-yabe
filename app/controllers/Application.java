@@ -4,7 +4,10 @@ import java.util.List;
 
 import models.Post;
 import play.Play;
+import play.cache.Cache;
 import play.data.validation.Required;
+import play.libs.Codec;
+import play.libs.Images;
 import play.mvc.Before;
 import play.mvc.Controller;
 
@@ -27,18 +30,36 @@ public class Application extends Controller {
     
     public static void show(Long id) {
     	Post post = Post.findById(id);
-    	render(post);
+    	String randomID = Codec.UUID();
+    	render(post, randomID);
     }
     
-    public static void postComment(Long postId, @Required String author, @Required String content) {
+    public static void postComment(Long postId,
+    		@Required(message="Author is required") String author,
+    		@Required(message="A message is required") String content,
+    		@Required(message="Please type the code") String code,
+    		String randomID) {
     	Post post = Post.findById(postId);
+    	
+    	validation.equals(
+    			code, Cache.get(randomID)
+    	).message("Invalid code. Please type it again");
+    	
     	if (validation.hasErrors()) {
-    		render("Application/show.html", post);
+    		render("Application/show.html", post, randomID);
     		return;
     	}
     	
     	post.addComment(author, content);
     	flash.success("Thanks for posting %s", author);
+    	Cache.delete(randomID);
     	show(postId);
+    }
+    
+    public static void captcha(String id) {
+    	Images.Captcha captcha = Images.captcha();
+    	String code = captcha.getText("#E4EAFD");
+    	Cache.set(id, code, "10mn");
+    	renderBinary(captcha);
     }
 }
