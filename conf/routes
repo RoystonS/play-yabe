@@ -7,7 +7,9 @@ GET     /                                       Application.index
 
 GET		/captcha								Application.captcha
 
-GET		/posts/{id}								Application.show
+GET		/posts/{<\d+>id}								Application.show
+GET		/posts/{tag}							Application.listTagged
+
 POST	/posts/{postId}/comments				Application.postComment
 
 # Ignore favicon requests
